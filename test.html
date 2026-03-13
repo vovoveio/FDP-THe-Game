@@ -6,17 +6,6 @@
     <title>FDP Online - Pro Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
-    .active-turn {
-    box-shadow: 0 0 20px var(--gold) !important;
-    border: 2px solid var(--gold) !important;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1.1) translateX(-50%); }
-    50% { transform: scale(1.15) translateX(-50%); }
-    100% { transform: scale(1.1) translateX(-50%); }
-}
     :root {
         --bg-gradient: radial-gradient(circle, #1a472a 0%, #05140a 100%);
         --gold: #ffd700;
@@ -123,9 +112,6 @@
 </div>
 
 <div id="sidebar">
-    <div id="audio-control" style="padding: 10px; text-align: center;">
-    <button id="toggle-music" onclick="toggleMusic()">🔊 Som Ligado</button>
-</div>
     <div id="scoreboard">
         <h3 style="margin:0; color:var(--gold)">🏆 Placar</h3>
         <div id="score-list" style="margin-top:10px"></div>
@@ -149,29 +135,6 @@
 </div>
 
 <script>
-    window.onbeforeunload = function() {
-    return "Você tem certeza que quer sair? A partida será encerrada.";
-};
-    function logEvent(msg, type = 'info') {
-    const log = document.getElementById('game-log');
-    const entry = document.createElement('div');
-    if (type === 'win') entry.style.color = '#ffd700'; // Ouro para vitórias
-    entry.innerText = `> ${msg}`;
-    log.prepend(entry);
-}
-// Exemplo de uso no código: 
-// logEvent(`🏆 ${players[winIdx].name} venceu a mesa!`, 'win');
-    function toggleMusic() {
-    const music = document.getElementById('bg-music');
-    const btn = document.getElementById('toggle-music');
-    if (music.paused) {
-        music.play();
-        btn.innerText = "🔊 Som Ligado";
-    } else {
-        music.pause();
-        btn.innerText = "🔇 Som Desligado";
-    }
-}
     const music = document.getElementById('bg-music');
 
 // Tenta tocar apenas após o primeiro clique do usuário em qualquer lugar
