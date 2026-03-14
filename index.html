@@ -30,7 +30,7 @@
         --gold: #ffd700;
         --card-back: repeating-linear-gradient(45deg, #1a2a6c, #1a2a6c 10px, #b21f1f 10px, #b21f1f 20px);
     }
-    body { font-family: 'Segoe UI', sans-serif; background: #050f09; color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+    body { font-family: 'Segoe UI', sans-serif; background: #050f09; color: white; margin: 0; display: flex; height: 100vh; overflow: auto; }
     #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
     .toast { background: var(--gold); color: #000; padding: 10px 20px; border-radius: 5px; margin-bottom: 10px; font-weight: bold; opacity: 0.9; }
     #multiplayer-overlay, #winner-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
@@ -118,6 +118,32 @@
         width: 100%;
         height: 100%;
     }
+    /* Quando a largura da tela for menor que 768px (celular padrão) */
+@media screen and (max-width: 768px) {
+    /* Diminui um pouco o tamanho da mesa para caber na tela */
+    #game-board {
+        width: 95vw;
+        height: 50vh;
+        border-width: 8px;
+    }
+
+    /* Ajusta o tamanho das cartas para não estourarem a tela */
+    .card {
+        width: 45px;
+        height: 65px;
+    }
+
+    /* Ajusta o espaçamento das cartas na mão para não ficarem tão largas */
+    .hand .card:not(:first-child) {
+        margin-left: -25px;
+    }
+
+    /* Reduz o tamanho da fonte no status bar para não quebrar linha */
+    #status-bar {
+        font-size: 14px;
+        padding: 10px;
+    }
+}
 </style>
 </head>
 <audio id="bg-music" loop>
