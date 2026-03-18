@@ -68,7 +68,17 @@
     #p4 { left: 10px; top: 50%; transform: translateY(-50%); }
     .info-box { font-size: 12px; margin-bottom: 5px; }
     .bet-done { color: #00ff00; font-weight: bold; margin-left: 5px; }
-    .hand { display: flex; justify-content: center; height: 90px; perspective: 1000px; }
+    .hand { 
+    display: flex; 
+    justify-content: center; 
+    align-items: flex-end; /* Alinha na base para o leque */
+    height: 120px; /* Aumentei um pouco para a rotação não cortar */
+    perspective: 1000px;
+    position: relative;
+    width: 200px; /* Largura fixa para o cálculo do leque */
+    margin: 0 auto;
+}
+
     .card { width: 60px; height: 85px; background: white; border-radius: 6px; color: #222; position: relative; cursor: pointer; transition: transform 0.2s; flex-shrink: 0; border: 1px solid #999; }
     .hand .card:not(:first-child) { margin-left: -35px; }
     .hand .card:hover { transform: translateY(-15px); z-index: 100 !important; }
@@ -417,7 +427,7 @@ Chegar até aqui exige curiosidade, algo que nem todos possuem.
 
 Sobre Mim: Wellington Desenvolvedor entusiasta, lenda no YU-GI-OH, o melhor jogador de super nintendo que já existiu e apaixonado por criar experiências únicas.
 
-Este sistema é meu campo de testes para a dominação mundial (ou só para umas jogatinas de FDP).`;
+Este sistema é meu campo de testes para a dominação mundial (ou só para umas jogatinas de FDP com o tema do Naruto).`
     let index = 0;
     
     function type() {
