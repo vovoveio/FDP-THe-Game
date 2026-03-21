@@ -649,7 +649,7 @@
                     if(randomBot) botSpeak(randomBot.name, 'provoke');
                 } else if (p.bot) {
                     botSpeak(p.name, 'unlucky');
-                    playSound('loseLife');
+                    
                 }
             }
         });
