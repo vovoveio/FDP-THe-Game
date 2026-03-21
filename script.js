@@ -52,19 +52,297 @@ window.onbeforeunload = function() { return "Você tem certeza que quer sair? A 
         } catch(e) {}
     }
 
-    const botTalk = {
-        provoke: ["Tá jogando dormindo? 😂", "Essa vida aí já era hein!", "Ficou no cheiro!", "Minha avó jogava melhor que isso...", "Aceita que dói menos!", "FDP neles! 🔥", "Foi mal, sou profissional.", "Isso é FDP, não é paciência!", "Pode ir pedindo música já?", "Tô só aquecendo.", "Essa doeu até em mim.", "Caiu na minha armadilha!", "Famoso Gap", "Ih, sentiu a pressão? O dedo Chegou a tremer na carta."],
-        unlucky: ["Não acredito que perdi essa vida...", "Baralho tá viciado!", "Que azar do caramba.", "Me roubaram na cara dura!", "Tava tudo planejado, menos isso.", "Vou denunciar esse bot!", "Na próxima eu não perdoo.", "Foi sorte sua, só isso.", "Alguém anotou a placa?", "Mão podre da desgraça!"],
-        bid: ["Essa mão tá melzinho na chupeta.", "Vou de leve nessa rodada.", "Aperta o cinto!", "Eita, agora o bicho vai pegar.", "Zero chance de eu errar essa.", "Boa sorte, vocês vão precisar.", "Vixi, o forbidden me quebrou.", "Tô sentindo o cheiro da vitória."],
-        win_trick: ["A casa sempre vence!", "Zapa neles!", "Aprende como se faz.", "Não adianta chorar.", "Já tá no bolso.", "Próxima!", "Chama o VAR!", "Ai meu Deus como é bom ser vida loka", "O pai é bom de mais!"]
-    };
+    // ============================================
+    // IA DE TRASH TALK INTELIGENTE DOS BOTS
+    // ============================================
 
-    function botSpeak(botName, category) {
-        const phrases = botTalk[category];
-        const text = phrases[Math.floor(Math.random() * phrases.length)];
-        const emoji = chatEmojis[Math.floor(Math.random() * chatEmojis.length)];
-        addChatMsg(botName, text, emoji);
-        if(isHost) broadcast({ type: 'CHAT_MSG', user: botName, text: text, emoji: emoji });
+    class BotPersonality {
+        constructor(botId, botName) {
+            this.id = botId;
+            this.name = botName;
+            this.personality = this.generatePersonality();
+            this.memory = {
+                lastInsult: null,
+                grudges: {},
+                winsThisMatch: 0,
+                lossesThisMatch: 0,
+                lastMessageType: null
+            };
+        }
+        
+        generatePersonality() {
+            const personalities = [
+                { type: "arrogante", basePhrases: { win: "óbvio", lose: "azar", provoke: "fraco" }, trashLevel: 9 },
+                { type: "estrategista", basePhrases: { win: "calculado", lose: "estudei errado", provoke: "previsível" }, trashLevel: 6 },
+                { type: "troll", basePhrases: { win: "kkkkk", lose: "foi mal", provoke: "tiltou?" }, trashLevel: 8 },
+                { type: "veterano", basePhrases: { win: "jogo isso há anos", lose: "velhice", provoke: "rookie" }, trashLevel: 5 },
+                { type: "psicopata", basePhrases: { win: "morreu", lose: "você vai pagar", provoke: "sua hora chega" }, trashLevel: 10 },
+                { type: "amigável", basePhrases: { win: "boa partida", lose: "parabéns", provoke: "boa sorte" }, trashLevel: 2 }
+            ];
+            return personalities[Math.floor(Math.random() * personalities.length)];
+        }
+        
+        analyzeGameState(gameState) {
+            const {
+                myLives,
+                myBid,
+                myWon,
+                myHand,
+                currentCards,
+                roundNumber,
+                opponents,
+                tableCards,
+                currentTurn,
+                myTurn,
+                myPosition
+            } = gameState;
+            
+            let analysis = {
+                mood: "neutral",
+                threatLevel: 0,
+                specificTarget: null,
+                shouldTrashTalk: false,
+                context: ""
+            };
+            
+            if (myLives === 1) {
+                analysis.mood = "desesperado";
+                analysis.context = "última vida";
+                analysis.shouldTrashTalk = true;
+            } else if (myLives === 0) {
+                analysis.mood = "eliminado";
+                analysis.context = "morri";
+                analysis.shouldTrashTalk = true;
+            }
+            
+            const bidDifference = myWon - myBid;
+            if (bidDifference > 0) {
+                analysis.mood = "confiante";
+                analysis.context = `${bidDifference} acima do palpite`;
+                analysis.shouldTrashTalk = Math.random() > 0.6;
+            } else if (bidDifference < -1) {
+                analysis.mood = "nervoso";
+                analysis.context = `preciso de ${-bidDifference} para alcançar`;
+                analysis.shouldTrashTalk = true;
+            }
+            
+            const handStrength = this.evaluateHand(myHand);
+            if (handStrength > 0.7 && currentCards <= 5) {
+                analysis.mood = "dominante";
+                analysis.context = "mão imbatível";
+                analysis.shouldTrashTalk = true;
+            } else if (handStrength < 0.3) {
+                analysis.mood = "derrotado";
+                analysis.context = "mão horrível";
+                analysis.shouldTrashTalk = handStrength === 0 ? true : false;
+            }
+            
+            let weakestOpponent = null;
+            let lowestLives = 4;
+            for (let opp of opponents) {
+                if (opp.lives < lowestLives && opp.lives > 0) {
+                    lowestLives = opp.lives;
+                    weakestOpponent = opp;
+                }
+            }
+            
+            if (weakestOpponent && this.memory.grudges[weakestOpponent.name]) {
+                analysis.specificTarget = weakestOpponent;
+                analysis.context = `pegando no pé de ${weakestOpponent.name}`;
+            } else if (weakestOpponent && weakestOpponent.lives === 1) {
+                analysis.specificTarget = weakestOpponent;
+                analysis.context = `${weakestOpponent.name} já era`;
+            }
+            
+            if (tableCards && tableCards.length > 0) {
+                const myCardOnTable = tableCards.find(tc => tc.owner === this.id);
+                if (myCardOnTable) {
+                    const isWinning = this.isCardWinning(myCardOnTable.card, tableCards);
+                    if (isWinning && this.memory.lastMessageType !== "win_trick") {
+                        analysis.shouldTrashTalk = true;
+                        analysis.context = "vou levar essa";
+                    }
+                }
+            }
+            
+            return analysis;
+        }
+        
+        evaluateHand(hand) {
+            if (!hand || hand.length === 0) return 0;
+            const powers = hand.map(c => power[c.id] || power[c.v] || 0);
+            const avgPower = powers.reduce((a, b) => a + b, 0) / powers.length;
+            const maxPower = Math.max(...powers);
+            return Math.min(1, (avgPower / 100 + maxPower / 200));
+        }
+        
+        isCardWinning(card, tableCards) {
+            if (!tableCards || tableCards.length === 0) return true;
+            const myPower = power[card.id] || power[card.v] || 0;
+            for (let tc of tableCards) {
+                if (tc.owner === this.id) continue;
+                const oppPower = power[tc.card.id] || power[tc.card.v] || 0;
+                if (oppPower > myPower) return false;
+            }
+            return true;
+        }
+        
+        generateMessage(category, analysis, gameContext) {
+            const { personality, name, memory } = this;
+            let messages = [];
+            
+            const situations = {
+                win_trick: {
+                    arrogante: [`Fácil demais.`, `Já sabia que ia levar.`, `Pode ir guardando as cartas.`, `Nem suaram.`, `Tá vendo como faz?`],
+                    estrategista: [`Estratégia perfeita.`, `Calculado desde o início.`, `Era o esperado.`, `Leitura de jogo afiada.`],
+                    troll: [`kkkkkkk`, `chupa`, `toma`, `aê porra`, `senta lá`],
+                    veterano: [`Mais uma pra conta.`, `Anos de experiência.`, `Não é novato que ganha mesmo.`, `Respeita o veterano.`],
+                    psicopata: [`VOCÊS NÃO PASSAM!`, `ACABOU PRA VOCÊS!`, `EU SOU A MORTE!`, `MAIS UMA ALMA!`],
+                    amigável: [`Boa tentativa!`, `Quase, quase.`, `Foi por pouco.`, `Continue tentando!`]
+                },
+                lose_life: {
+                    arrogante: [`Sorte pura, na próxima não tem.`, `Foi só um vacilo.`, `Isso não vai se repetir.`],
+                    estrategista: [`Erro de cálculo.`, `Não esperava essa.`, `Preciso recalcular.`, `Ajustando estratégia.`],
+                    troll: [`putz`, `aí foi foda kkk`, `me pegou`, `essa doeu`],
+                    veterano: [`Falha minha.`, `Não era pra ser assim.`, `Ainda tenho muito jogo.`],
+                    psicopata: [`ISSO NÃO ACABA COMIGO!`, `VOCÊ VAI PAGAR!`, `SÓ ME DEIXOU MAIS FORTE!`],
+                    amigável: [`Boa jogada!`, `Mereceu essa.`, `Agora é minha vez.`]
+                },
+                provoke: {
+                    arrogante: [`Tá com medo?`, `Já era pra você.`, `Desiste logo.`, `Fraco demais.`, `Aposenta essa mão.`],
+                    estrategista: [`Seu erro foi previsível.`, `Li seu jogo todo.`, `Não adianta tentar me enganar.`],
+                    troll: [`tiltou?`, `chora`, `vai dormir`, `passa mal`, `morreu pro bot kkk`],
+                    veterano: [`Aprende a jogar.`, `No meu tempo isso não colava.`, `Precisa de aula?`],
+                    psicopata: [`VAI CHORAR?`, `SUA HORA VAI CHEGAR!`, `SANGUE NO OLHO!`],
+                    amigável: [`Relaxa, é só um jogo.`, `Tenta de novo.`, `Vamos, você consegue.`]
+                },
+                bid: {
+                    arrogante: [`Vou apostar alto hoje.`, `Essa mão é minha.`, `Preparem-se pra perder.`],
+                    estrategista: [`Vou analisar bem essa.`, `Palpite calculado.`, `Não vou errar dessa vez.`],
+                    troll: [`vai dar bom`, `fé no pai`, `bora arriscar`],
+                    veterano: [`Com minha experiência...`, `Vou de seguro.`, `Sei bem o que tô fazendo.`],
+                    psicopata: [`VOU DESTRUIR!`, `APOSTO MINHA ALMA!`, `É TUDO OU NADA!`],
+                    amigável: [`Boa sorte pra todos.`, `Que vença o melhor.`, `Vamos nos divertir.`]
+                },
+                ultimate: {
+                    arrogante: [`ACABOU!`, `FIM DE JOGO!`, `NEM ADIANTA TENTAR!`],
+                    estrategista: [`Xeque-mate.`, `Partida resolvida.`, `Foi uma honra.`],
+                    troll: [`GAME OVER`, `VAI PRA CASA`, `BYE BYE`],
+                    veterano: [`É hora de encerrar.`, `Mais uma vitória no currículo.`],
+                    psicopata: [`MORRA!`, `FIM!`, `NÃO SOBRA NINGUÉM!`],
+                    amigável: [`Foi uma ótima partida!`, `Parabéns a todos!`, `Até a próxima!`]
+                }
+            };
+            
+            let finalCategory = category;
+            let messagesList = situations[finalCategory];
+            
+            if (analysis && analysis.context) {
+                if (analysis.context.includes("última vida")) {
+                    messagesList = situations.ultimate;
+                    finalCategory = "ultimate";
+                }
+            }
+            
+            let availableMessages = messagesList ? messagesList[personality.type] : messagesList?.amigável;
+            if (!availableMessages) availableMessages = situations.amigável[personality.type] || ["..."];
+            
+            let message = availableMessages[Math.floor(Math.random() * availableMessages.length)];
+            
+            if (analysis && analysis.specificTarget && (category === "provoke" || category === "win_trick")) {
+                const target = analysis.specificTarget.name;
+                const targetPrefixes = [`, ${target}`, `, olha o ${target}`, ` ${target}`, `, ó ${target}`];
+                message += targetPrefixes[Math.floor(Math.random() * targetPrefixes.length)];
+            }
+            
+            if (analysis && analysis.context && Math.random() > 0.7) {
+                const contextSuffixes = [` (${analysis.context})`, ` — ${analysis.context}`, `, ${analysis.context}`];
+                message += contextSuffixes[Math.floor(Math.random() * contextSuffixes.length)];
+            }
+            
+            const emojiMap = {
+                win_trick: ["🏆", "🎯", "💪", "🔥", "⚡"],
+                lose_life: ["💀", "😭", "💔", "😤", "😫"],
+                provoke: ["😏", "😂", "🤡", "👀", "😎", "🔥"],
+                bid: ["🤔", "🎲", "♠️", "🃏", "🎯"],
+                ultimate: ["💀", "⚰️", "👑", "🏆", "🔥🔥"]
+            };
+            
+            const emojis = emojiMap[finalCategory] || emojiMap.provoke;
+            const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+            
+            memory.lastMessageType = finalCategory;
+            
+            return { text: message, emoji };
+        }
+    }
+
+    const botPersonalities = {};
+
+    function botSpeak(botId, category, gameContext = {}) {
+        const bot = players[botId];
+        if (!bot || !bot.bot) return;
+        
+        if (!botPersonalities[botId]) {
+            botPersonalities[botId] = new BotPersonality(botId, bot.name);
+        }
+        
+        const personality = botPersonalities[botId];
+        
+        const gameState = {
+            myLives: bot.lives,
+            myBid: bot.bid,
+            myWon: bot.won,
+            myHand: bot.hand,
+            currentCards: currentCards,
+            roundNumber: currentCards,
+            opponents: players.filter(p => p.id !== botId && p.lives > 0).map(p => ({
+                id: p.id,
+                name: p.name,
+                lives: p.lives,
+                bid: p.bid,
+                won: p.won
+            })),
+            tableCards: tableCards,
+            currentTurn: turnStarter,
+            myTurn: turnStarter === botId,
+            myPosition: botId
+        };
+        
+        const analysis = personality.analyzeGameState(gameState);
+        
+        let shouldSpeak = false;
+        
+        switch(category) {
+            case 'win_trick':
+                shouldSpeak = Math.random() > 0.4;
+                break;
+            case 'lose_life':
+                shouldSpeak = Math.random() > 0.3;
+                break;
+            case 'provoke':
+                shouldSpeak = analysis.shouldTrashTalk || Math.random() > 0.85;
+                break;
+            case 'bid':
+                shouldSpeak = Math.random() > 0.75;
+                break;
+            default:
+                shouldSpeak = Math.random() > 0.8;
+        }
+        
+        if (personality.personality.trashLevel > 7) {
+            shouldSpeak = shouldSpeak || Math.random() > 0.6;
+        }
+        
+        if (!shouldSpeak) return;
+        
+        const message = personality.generateMessage(category, analysis, gameContext);
+        
+        addChatMsg(bot.name, message.text, message.emoji);
+        
+        if (isHost) {
+            broadcast({ type: 'CHAT_MSG', user: bot.name, text: message.text, emoji: message.emoji });
+        }
     }
 
     function logEvent(msg, type = 'info') {
@@ -385,18 +663,16 @@ window.onbeforeunload = function() { return "Você tem certeza que quer sair? A 
     }
 
     async function gameLoop() {
-        // 1. Verificação de segurança: Se já houver um vencedor, não inicia nova rodada
         let alive = players.filter(p => p.lives > 0);
         if (alive.length <= 1) {
             let winName = alive.length === 1 ? alive[0].name : "Empate!";
             sync("FIM!", null, winName);
             showWinner(winName);
-            return; // TRAVA O LOOP AQUI
+            return;
         }
 
         if (currentCards > 10) return updateStatus("FIM DO JOGO!");
         
-        // Limpeza de rodada
         players.forEach(p => { p.hand = []; p.bid = 0; p.won = 0; p.hasBetted = false; });
         tableCards = [];
         
@@ -422,22 +698,19 @@ window.onbeforeunload = function() { return "Você tem certeza que quer sair? A 
         await handleBids();
         await handleTricks();
         
-        // 2. Processa o fim da rodada (perda de vidas)
         await endRound(); 
         
-        // 3. SEGUNDA CHECAGEM DE VITÓRIA (Pós-vidas)
         alive = players.filter(p => p.lives > 0);
         if (alive.length <= 1) {
             let winName = alive.length === 1 ? alive[0].name : "Empate!";
             sync("FIM!", null, winName);
             showWinner(winName);
-            return; // IMPEDE QUE currentCards++ ACONTEÇA
+            return;
         }
 
         roundStarter = (roundStarter + 1) % 4;
         currentCards++;
         
-        // Delay para o jogador ver o que aconteceu antes da próxima rodada
         await new Promise(r => setTimeout(r, 1000));
         gameLoop();
     }
@@ -486,7 +759,7 @@ window.onbeforeunload = function() { return "Você tem certeza que quer sair? A 
                     if (p.bid > currentCards) p.bid = currentCards;
                     if (p.bid === forbidden) p.bid = (p.bid === 0 || strength > 0.6) ? p.bid + 1 : p.bid - 1;
                     if (p.bid < 0) p.bid = 0;
-                    if(Math.random() > 0.7) botSpeak(p.name, 'bid');
+                    if(Math.random() > 0.7) botSpeak(p.id, 'bid');
                 } else if (p.remote) {
                     updateStatus(`Aguardando palpite de ${p.name}...`);
                     sendTo(bidder, { type: 'ASK_BID', forbidden });
@@ -576,7 +849,7 @@ window.onbeforeunload = function() { return "Você tem certeza que quer sair? A 
             players[winIdx].won++;
             turnStarter = winIdx;
             setTimeout(() => { addWinnerGlowToCard(winIdx); }, 100);
-            if(players[winIdx].bot && Math.random() > 0.5) botSpeak(players[winIdx].name, 'win_trick');
+            if(players[winIdx].bot && Math.random() > 0.5) botSpeak(winIdx, 'win_trick');
             logEvent(`🏆 ${players[winIdx].name} venceu a mesa!`, 'win');
             showToast(`${players[winIdx].name} venceu a mesa!`);
             playVictoryFanfare();
@@ -618,19 +891,17 @@ window.onbeforeunload = function() { return "Você tem certeza que quer sair? A 
                 p.lives--; 
                 animateLifeLost(p.id);
                 
-                // Diálogos dos Bots
                 if(p.id === myPlayerIndex) {
                     let randomBot = players.filter(b => b.bot && b.lives > 0)[0];
-                    if(randomBot) botSpeak(randomBot.name, 'provoke');
+                    if(randomBot) botSpeak(randomBot.id, 'provoke');
                 } else if (p.bot) {
-                    botSpeak(p.name, 'unlucky');
+                    botSpeak(p.id, 'lose_life');
                 }
             }
         });
         
         logEvent("--- Fim da rodada! ---");
         sync();
-        // Espera a animação de vida sumindo terminar
         await new Promise(r => setTimeout(r, 2000));
     }
 
@@ -707,4 +978,3 @@ window.onbeforeunload = function() { return "Você tem certeza que quer sair? A 
         }
         setTimeout(() => { if (playerScoreItem) playerScoreItem.classList.remove('life-lost-animation'); }, 600);
     }
-    
