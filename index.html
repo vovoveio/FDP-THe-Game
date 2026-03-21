@@ -42,12 +42,14 @@
     </div>
 </div>
 
-<div id="winner-overlay" style="display: none !important;">
-    <div class="conn-box" style="background: #0b0e13;">
-        <h1 style="font-size:3rem; margin-bottom:10px;">🏆 VENCEDOR 🏆</h1>
-        <h2 id="winner-name" style="color:var(--gold); margin-bottom: 20px;"></h2>
-        <button onclick="resetGame()">🔄 Jogar Novamente</button>
+<div id="winner-overlay" style="display: none;">
+    <div class="winner-content" style="background: linear-gradient(145deg, #1a2a1f, #0a1a0f); padding: 48px 64px; border-radius: 48px; text-align: center; border: 2px solid var(--gold); box-shadow: 0 0 50px rgba(245,176,66,0.3);">
+        <h1 style="font-size: 3rem; margin-bottom: 20px;">🏆 VENCEDOR 🏆</h1>
+        <h2 id="winner-name" style="color: var(--gold); font-size: 2rem; margin-bottom: 30px;"></h2>
+        <button onclick="resetGame()" style="background: var(--gold); color: #000; padding: 12px 32px; font-size: 1.2rem; margin-right: 12px;">🔄 Nova Partida</button>
+        <button onclick="location.reload()" style="background: #333; color: white; padding: 12px 32px; font-size: 1.2rem;">🏠 Menu Principal</button>
     </div>
+</div>
 </div>
 
 <div id="sidebar">

@@ -1,53 +1,37 @@
-    window.onbeforeunload = function() { return "Você tem certeza que quer sair? A partida será encerrada."; };
+window.onbeforeunload = function() { return "Você tem certeza que quer sair? A partida será encerrada."; };
 
     let botDifficulty = 3;
-        // Sistema de sons diferenciados
     const soundEffects = {
-        // Sons básicos
         dealCard: { freq: 440, type: 'sine', duration: 0.15, volume: 0.3 },
         makeBid: { freq: 523, type: 'sine', duration: 0.12, volume: 0.25 },
         playCard: { freq: 392, type: 'triangle', duration: 0.2, volume: 0.35 },
-        
-        // Sons de vitória/derrota
         winTrick: { freq: 880, type: 'sine', duration: 0.25, volume: 0.4 },
         loseLife: { freq: 220, type: 'sawtooth', duration: 0.35, volume: 0.45 },
         wrongBid: { freq: 196, type: 'square', duration: 0.3, volume: 0.4 },
-        
-        // Sons especiais
         megaStreak: { freq: 1046, type: 'sine', duration: 0.4, volume: 0.5 },
         gameEnd: { freq: 523, type: 'sine', duration: 0.5, volume: 0.45, fadeOut: true },
-        
-        // Sons de interação
         cardFlip: { freq: 880, type: 'sine', duration: 0.08, volume: 0.2 },
         errorBuzz: { freq: 150, type: 'sawtooth', duration: 0.2, volume: 0.35 }
     };
     
-    // Função de som aprimorada
     function playSound(soundKey, customFreq = null) {
         const sound = soundEffects[soundKey];
         if (!sound) return;
-        
         try {
             const freq = customFreq || sound.freq;
             const o = au.createOscillator();
             const g = au.createGain();
-            
             o.type = sound.type;
             o.frequency.value = freq;
-            
             g.gain.setValueAtTime(sound.volume, au.currentTime);
             g.gain.exponentialRampToValueAtTime(0.0001, au.currentTime + sound.duration);
-            
             o.connect(g);
             g.connect(au.destination);
             o.start();
             o.stop(au.currentTime + sound.duration);
-        } catch(e) {
-            // Silencia erro de áudio
-        }
+        } catch(e) {}
     }
     
-    // Som de fanfarra para vitória de rodada (mais elaborado)
     function playVictoryFanfare() {
         try {
             const notes = [523, 659, 784, 1046];
@@ -67,6 +51,7 @@
             });
         } catch(e) {}
     }
+
     const botTalk = {
         provoke: ["Tá jogando dormindo? 😂", "Essa vida aí já era hein!", "Ficou no cheiro!", "Minha avó jogava melhor que isso...", "Aceita que dói menos!", "FDP neles! 🔥", "Foi mal, sou profissional.", "Isso é FDP, não é paciência!", "Pode ir pedindo música já?", "Tô só aquecendo.", "Essa doeu até em mim.", "Caiu na minha armadilha!", "Famoso Gap", "Ih, sentiu a pressão? O dedo Chegou a tremer na carta."],
         unlucky: ["Não acredito que perdi essa vida...", "Baralho tá viciado!", "Que azar do caramba.", "Me roubaram na cara dura!", "Tava tudo planejado, menos isso.", "Vou denunciar esse bot!", "Na próxima eu não perdoo.", "Foi sorte sua, só isso.", "Alguém anotou a placa?", "Mão podre da desgraça!"],
@@ -192,20 +177,15 @@
         });
     }
     
-    // Função para limpar a zona de palpites
     function clearBetZone() {
         const betZone = document.getElementById('bet-zone');
         betZone.innerHTML = '';
     }
     
-    // Função para mostrar feedback visual quando um jogador joga uma carta
     function showPlayFeedback(playerId) {
         const playerSlot = document.getElementById(`p${playerId+1}`);
         if (!playerSlot) return;
-        
-        // Adiciona uma animação de flash
         playerSlot.classList.add('play-feedback');
-
         const handDiv = document.getElementById(`h${playerId+1}`);
         if (handDiv && handDiv.lastChild) {
             const cardRect = handDiv.lastChild.getBoundingClientRect();
@@ -213,32 +193,20 @@
             const centerY = cardRect.top + cardRect.height / 2;
             createParticles(centerX, centerY, 15);
         }
-        
-        // Mostra um indicador temporário no info-box
         const infoBox = document.getElementById(`i${playerId+1}`);
         if (infoBox) {
             const originalHTML = infoBox.innerHTML;
             infoBox.innerHTML = originalHTML + '<br><span style="color: var(--gold); font-size: 11px;">🎴 Jogou!</span>';
-            setTimeout(() => {
-                if (infoBox) infoBox.innerHTML = originalHTML;
-            }, 800);
+            setTimeout(() => { if (infoBox) infoBox.innerHTML = originalHTML; }, 800);
         }
-        
-        // Remove a animação após 500ms
-        setTimeout(() => {
-            playerSlot.classList.remove('play-feedback');
-        }, 500);
+        setTimeout(() => { playerSlot.classList.remove('play-feedback'); }, 500);
     }
-        // Função para adicionar efeito de brilho na carta vencedora
+
     function addWinnerGlowToCard(ownerId) {
-        // Procura a carta vencedora na mesa
         const tableArea = document.getElementById('table-area');
         if (!tableArea) return;
-        
         const cardWrappers = tableArea.querySelectorAll('.card-wrapper');
         if (!cardWrappers.length) return;
-        
-        // Encontra a carta do jogador vencedor
         let winnerCard = null;
         for (let wrapper of cardWrappers) {
             const nameLabel = wrapper.querySelector('.card-owner-name');
@@ -247,17 +215,11 @@
                 break;
             }
         }
-        
         if (!winnerCard) return;
-        
-        // Adiciona o efeito de brilho
         winnerCard.classList.add('winner-glow');
-        
-        // Cria estrelas ao redor da carta
         const rect = winnerCard.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        
         for (let i = 0; i < 6; i++) {
             setTimeout(() => {
                 const star = document.createElement('div');
@@ -267,17 +229,10 @@
                 star.style.left = (centerX + Math.cos(angle) * radius - 10) + 'px';
                 star.style.top = (centerY + Math.sin(angle) * radius - 10) + 'px';
                 document.body.appendChild(star);
-                
                 setTimeout(() => star.remove(), 500);
             }, i * 50);
         }
-        
-        // Remove a classe após a animação
-        setTimeout(() => {
-            if (winnerCard) winnerCard.classList.remove('winner-glow');
-        }, 700);
-        
-        // Som de vitória (mais alegre)
+        setTimeout(() => { if (winnerCard) winnerCard.classList.remove('winner-glow'); }, 700);
         playSound('winTrick');
     }
 
@@ -285,7 +240,6 @@
     let isHost = false;
     let myPlayerIndex = 0;
     let connections = [];
-
     const au = new (window.AudioContext || window.webkitAudioContext)();
     function sfx(f, t, d) {
         const o = au.createOscillator();
@@ -304,7 +258,7 @@
     const power = {'4♣':100,'7♥':99,'A♠':98,'7♦':97,'3':10,'2':9,'A':8,'K':7,'J':6,'Q':5,'7':4,'6':3,'5':2,'4':1};
 
     let players = [
-        { id: 0, name: playerName || "Jogador", lives: 3, hand: [], bid: 0, won: 0, bot: false, hasBetted: false, remote: false, },
+        { id: 0, name: playerName || "Jogador", lives: 3, hand: [], bid: 0, won: 0, bot: false, hasBetted: false, remote: false },
         { id: 1, name: "Bot 1", lives: 3, hand: [], bid: 0, won: 0, bot: true, hasBetted: false, remote: false },
         { id: 2, name: "Bot 2", lives: 3, hand: [], bid: 0, won: 0, bot: true, hasBetted: false, remote: false },
         { id: 3, name: "Bot 3", lives: 3, hand: [], bid: 0, won: 0, bot: true, hasBetted: false, remote: false }
@@ -372,7 +326,16 @@
         if(data.type === 'CHAT_MSG') { addChatMsg(data.user, data.text, data.emoji); if(isHost) broadcast(data); }
         if(data.type === 'LOBBY_UPDATE') { players = data.players; myPlayerIndex = players.findIndex(p => p.connId === peer.id); updateLobbyList(); }
         if(data.type === 'START_GAME') { document.getElementById('multiplayer-overlay').style.display = 'none'; document.getElementById('winner-overlay').style.display = 'none'; }
-        if(data.type === 'SYNC_STATE') { players = data.players; tableCards = data.tableCards; currentCards = data.currentCards; updateStatus(data.status); render(); renderTable(); if(data.activeId !== undefined) highlightPlayer(data.activeId); if(data.winner) showWinner(data.winner); }
+        if(data.type === 'SYNC_STATE') { 
+            players = data.players; 
+            tableCards = data.tableCards; 
+            currentCards = data.currentCards; 
+            updateStatus(data.status); 
+            render(); 
+            renderTable(); 
+            if(data.activeId !== undefined) highlightPlayer(data.activeId); 
+            if(data.winner) showWinner(data.winner); 
+        }
         if(data.type === 'ASK_BID') { askBid(data.forbidden).then(val => { conn.send({ type: 'RES_BID', value: val, from: myPlayerIndex }); }); }
         if(data.type === 'ASK_CARD') { waitCard().then(card => { conn.send({ type: 'RES_CARD', value: card, from: myPlayerIndex }); }); }
         if(isHost) {
@@ -385,12 +348,6 @@
                 window.resolverCard = null; 
             }
         }
-    }
-
-    function showWinner(name) {
-        const winnerOverlay = document.getElementById('winner-overlay');
-        winnerOverlay.style.display = 'flex';
-        document.getElementById('winner-name').innerText = name;
     }
 
     function updateStatus(m) { document.getElementById('status-bar').innerHTML = m; }
@@ -421,36 +378,67 @@
         startGame();
     }
 
+    function showWinner(name) {
+        const winnerOverlay = document.getElementById('winner-overlay');
+        winnerOverlay.style.display = 'flex';
+        document.getElementById('winner-name').innerText = name;
+    }
+
     async function gameLoop() {
+        // 1. Verificação de segurança: Se já houver um vencedor, não inicia nova rodada
+        let alive = players.filter(p => p.lives > 0);
+        if (alive.length <= 1) {
+            let winName = alive.length === 1 ? alive[0].name : "Empate!";
+            sync("FIM!", null, winName);
+            showWinner(winName);
+            return; // TRAVA O LOOP AQUI
+        }
+
         if (currentCards > 10) return updateStatus("FIM DO JOGO!");
+        
+        // Limpeza de rodada
         players.forEach(p => { p.hand = []; p.bid = 0; p.won = 0; p.hasBetted = false; });
         tableCards = [];
+        
         let deck = [];
         for(let s of suits) for(let v of values) deck.push({s, v, id: v+s});
+        
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [array[i], array[j]] = [array[j], array[i]];
             }
         }
+        
         shuffle(deck);
-        for(let i=0; i<currentCards; i++) { players.forEach(p => { if(p.lives > 0) p.hand.push(deck.pop()); }); }
-         // ========== SOM DE DISTRIBUIÇÃO ==========
+        for(let i=0; i<currentCards; i++) { 
+            players.forEach(p => { if(p.lives > 0) p.hand.push(deck.pop()); }); 
+        }
+        
         playSound('dealCard');
-        // =========================================
-        sync(); 
+        sync("Distribuindo..."); 
         turnStarter = roundStarter;
+        
         await handleBids();
         await handleTricks();
-        let alive = players.filter(p => p.lives > 0);
+        
+        // 2. Processa o fim da rodada (perda de vidas)
+        await endRound(); 
+        
+        // 3. SEGUNDA CHECAGEM DE VITÓRIA (Pós-vidas)
+        alive = players.filter(p => p.lives > 0);
         if (alive.length <= 1) {
             let winName = alive.length === 1 ? alive[0].name : "Empate!";
             sync("FIM!", null, winName);
             showWinner(winName);
-            return;
+            return; // IMPEDE QUE currentCards++ ACONTEÇA
         }
+
         roundStarter = (roundStarter + 1) % 4;
         currentCards++;
+        
+        // Delay para o jogador ver o que aconteceu antes da próxima rodada
+        await new Promise(r => setTimeout(r, 1000));
         gameLoop();
     }
 
@@ -481,16 +469,13 @@
                         else if (pwr >= 9) strength += 0.7; 
                         else if (pwr >= 7) strength += 0.3; 
                     });
-                    if (botDifficulty === 0) {
-                        p.bid = Math.round(strength);
-                    } else if (botDifficulty === 3) {
+                    if (botDifficulty === 0) p.bid = Math.round(strength);
+                    else if (botDifficulty === 3) {
                         if (currentCards === 1) {
                             let visiblePowers = players.filter(pl => pl.id !== bidder && pl.lives > 0).map(pl => power[pl.hand[0].id] || power[pl.hand[0].v]);
                             let avgOther = visiblePowers.reduce((a,b) => a+b,0) / visiblePowers.length;
                             p.bid = avgOther < 7 ? 1 : 0;
-                        } else {
-                            p.bid = strength > 1.2 ? Math.ceil(strength) : Math.floor(strength);
-                        }
+                        } else p.bid = strength > 1.2 ? Math.ceil(strength) : Math.floor(strength);
                     } else {
                         p.bid = Math.ceil(strength * 0.85);
                         if (botDifficulty === 2) {
@@ -499,9 +484,7 @@
                         }
                     }
                     if (p.bid > currentCards) p.bid = currentCards;
-                    if (p.bid === forbidden) {
-                        p.bid = (p.bid === 0 || strength > 0.6) ? p.bid + 1 : p.bid - 1;
-                    }
+                    if (p.bid === forbidden) p.bid = (p.bid === 0 || strength > 0.6) ? p.bid + 1 : p.bid - 1;
                     if (p.bid < 0) p.bid = 0;
                     if(Math.random() > 0.7) botSpeak(p.name, 'bid');
                 } else if (p.remote) {
@@ -514,14 +497,13 @@
                 }
                 sum += p.bid;
                 p.hasBetted = true;
-                 playSound('makeBid');
+                playSound('makeBid');
                 logEvent(`${p.name} deu o palpite: ${p.bid}`);
                 sync();
                 processed++;
             }
             bidder = (bidder + 1) % 4;
         }
-        // Após todos os palpites, limpar a zona de botões
         clearBetZone();
     }
 
@@ -571,9 +553,7 @@
                                     if (melar) card = melar.card;
                                 }
                             }
-                        } else {
-                            card = p.won < p.bid ? p.hand.pop() : p.hand.shift();
-                        }
+                        } else card = p.won < p.bid ? p.hand.pop() : p.hand.shift();
                         p.hand = p.hand.filter(c => c.id !== card.id);
                     } else if (p.remote) {
                         updateStatus(`Aguardando carta de ${p.name}...`);
@@ -586,7 +566,6 @@
                     tableCards.push({card, owner: pIdx});
                     playSound('playCard');
                     logEvent(`${p.name} jogou ${card.v}${card.s}`);
-                    // Mostrar feedback visual de jogada
                     showPlayFeedback(pIdx);
                     sync(null, pIdx);
                     playedCount++;
@@ -596,12 +575,7 @@
             let winIdx = calcWinner(tableCards);
             players[winIdx].won++;
             turnStarter = winIdx;
-             // ========== NOVO: EFEITO DE BRILHO NA CARTA VENCEDORA ==========
-            // Aguarda um pequeno delay para a carta aparecer na mesa
-            setTimeout(() => {
-                addWinnerGlowToCard(winIdx);
-            }, 100);
-            // ==============================================================
+            setTimeout(() => { addWinnerGlowToCard(winIdx); }, 100);
             if(players[winIdx].bot && Math.random() > 0.5) botSpeak(players[winIdx].name, 'win_trick');
             logEvent(`🏆 ${players[winIdx].name} venceu a mesa!`, 'win');
             showToast(`${players[winIdx].name} venceu a mesa!`);
@@ -610,7 +584,6 @@
             tableCards = []; 
             sync();
         }
-        await endRound();
     }
 
     function waitCard() {
@@ -643,74 +616,51 @@
         players.forEach(p => { 
             if(p.lives > 0 && p.bid !== p.won) {
                 p.lives--; 
-                 
+                animateLifeLost(p.id);
+                
+                // Diálogos dos Bots
                 if(p.id === myPlayerIndex) {
                     let randomBot = players.filter(b => b.bot && b.lives > 0)[0];
                     if(randomBot) botSpeak(randomBot.name, 'provoke');
                 } else if (p.bot) {
                     botSpeak(p.name, 'unlucky');
-                    
                 }
             }
         });
+        
         logEvent("--- Fim da rodada! ---");
         sync();
+        // Espera a animação de vida sumindo terminar
         await new Promise(r => setTimeout(r, 2000));
     }
 
     function render() {
-    players.forEach((p, i) => {
-        const info = document.getElementById(`i${i+1}`);
-        const h = document.getElementById(`h${i+1}`);
-        if (p.lives <= 0) { 
-            info.innerHTML = `<b>${p.name}</b><br><span style="color:#b95c5c;">💀 ELIMINADO</span>`; 
-            h.innerHTML = ''; 
-            return; 
-        }
-        info.innerHTML = `<b>${p.name}</b> ${p.hasBetted ? '<span class="bet-done">✅</span>' : ''}<br>❤️ ${p.lives} | Palpite: ${p.bid} | Fez: ${p.won}`;
-        h.innerHTML = '';
-        
-        p.hand.forEach((c, idx) => {
-            const el = document.createElement('div');
-            const isRed = (c.s === '♥' || c.s === '♦');
-            
-            let showCard = false;
-            
-            if (currentCards === 1) {
-                // Primeira rodada: vejo as cartas dos outros, mas não a minha
-                if (i !== myPlayerIndex) {
-                    showCard = true;
-                } else {
-                    showCard = false;
-                }
-            } else {
-                // Demais rodadas: vejo minha carta, as dos oponentes ficam ocultas
-                if (i === myPlayerIndex) {
-                    showCard = true;
-                } else {
-                    showCard = false;
-                }
+        players.forEach((p, i) => {
+            const info = document.getElementById(`i${i+1}`);
+            const h = document.getElementById(`h${i+1}`);
+            if (p.lives <= 0) { 
+                info.innerHTML = `<b>${p.name}</b><br><span style="color:#b95c5c;">💀 ELIMINADO</span>`; 
+                h.innerHTML = ''; 
+                return; 
             }
-            
-            if (showCard) {
-                el.className = `card ${isRed ? 'red' : 'black'}`;
-                // Adiciona os elementos das linhas laterais
-                el.innerHTML = `
-                    <div class="rank">${c.v}</div>
-                    <div class="center">${c.s}</div>
-                    <div class="suit-mini">${c.v}</div>
-                    <div class="center-line-left"></div>
-                    <div class="center-line-right"></div>
-                `;
-            } else {
-                el.className = `card hidden-card`;
-                el.innerHTML = '<span>?</span>';
-            }
-            h.appendChild(el);
+            info.innerHTML = `<b>${p.name}</b> ${p.hasBetted ? '<span class="bet-done">✅</span>' : ''}<br>❤️ ${p.lives} | Palpite: ${p.bid} | Fez: ${p.won}`;
+            h.innerHTML = '';
+            p.hand.forEach((c, idx) => {
+                const el = document.createElement('div');
+                const isRed = (c.s === '♥' || c.s === '♦');
+                let showCard = (currentCards === 1) ? (i !== myPlayerIndex) : (i === myPlayerIndex);
+                if (showCard) {
+                    el.className = `card ${isRed ? 'red' : 'black'}`;
+                    el.innerHTML = `<div class="rank">${c.v}</div><div class="center">${c.s}</div><div class="suit-mini">${c.v}</div><div class="center-line-left"></div><div class="center-line-right"></div>`;
+                } else {
+                    el.className = `card hidden-card`;
+                    el.innerHTML = '<span>?</span>';
+                }
+                h.appendChild(el);
+            });
         });
-    });
-    updateScoreList();
-}
+        updateScoreList();
+    }
 
     function updateScoreList() {
         const container = document.getElementById('score-list');
@@ -721,120 +671,40 @@
         const modal = document.getElementById('instruction-modal');
         modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
     }
-        // Função para criar partículas ao jogar carta
+
     function createParticles(x, y, count = 12) {
         for (let i = 0; i < count; i++) {
             setTimeout(() => {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
-                
-                // Variação aleatória de direção
                 const angle = (Math.random() * Math.PI * 2);
                 const distance = 30 + Math.random() * 50;
                 const xMove = Math.cos(angle) * distance;
-                const yMove = Math.sin(angle) * distance - 20; // tende para cima
-                
-                // Adiciona variação de cor dourada
-                if (Math.random() > 0.7) {
-                    particle.classList.add('particle-gold');
-                }
-                
-                // Define a posição inicial no local da carta
+                const yMove = Math.sin(angle) * distance - 20; 
+                if (Math.random() > 0.7) particle.classList.add('particle-gold');
                 particle.style.left = (x - 3) + 'px';
                 particle.style.top = (y - 3) + 'px';
-                
-                // Define a direção usando variáveis CSS
                 particle.style.setProperty('--x', xMove + 'px');
                 particle.style.setProperty('--y', yMove + 'px');
-                
                 document.body.appendChild(particle);
-                
-                // Remove a partícula após a animação
-                setTimeout(() => {
-                    particle.remove();
-                }, 800);
-            }, i * 30); // efeito cascata
+                setTimeout(() => { particle.remove(); }, 800);
+            }, i * 30);
         }
     }
     
-        // Função para animar a perda de vida no placar
     function animateLifeLost(playerId) {
-        const scoreItems = document.querySelectorAll('.score-item');
-        // Encontra o item do jogador que perdeu vida
-        const playerScoreItem = scoreItems[playerId];
-        if (!playerScoreItem) return;
-        
-        // Adiciona a animação principal
-        playerScoreItem.classList.add('life-lost-animation');
-        
-        // Encontra o coração no texto e anima
-        const originalText = playerScoreItem.innerHTML;
-        // Procura o coração ou o texto de vida
-        if (originalText.includes('❤️')) {
-            playerScoreItem.innerHTML = originalText.replace('❤️', '<span class="heart-break">💔</span>');
-            setTimeout(() => {
-                playerScoreItem.innerHTML = originalText;
-            }, 600);
-        }
-        
-        // Remove a animação após terminar
-        setTimeout(() => {
-            playerScoreItem.classList.remove('life-lost-animation');
-        }, 600);
-        
-        // Efeito sonoro de perda de vida (tom mais grave)
-        sfx(300, 'sawtooth', 0.3);
-        
-        // Pequena vibração no slot do jogador
-        const playerSlot = document.getElementById(`p${playerId+1}`);
-        if (playerSlot) {
-            playerSlot.style.transform = 'scale(0.98)';
-            setTimeout(() => {
-                playerSlot.style.transform = '';
-            }, 200);
-        }
-    }
-        // Função para animar a perda de vida no placar (versão corrigida)
-    function animateLifeLost(playerId) {
-        // Verifica se o playerId é válido
         if (playerId === undefined || playerId === null) return;
-        
         const scoreItems = document.querySelectorAll('.score-item');
-        // Verifica se existe o item do jogador
         if (!scoreItems || scoreItems.length <= playerId) return;
-        
         const playerScoreItem = scoreItems[playerId];
         if (!playerScoreItem) return;
-        
-        // Adiciona a animação principal
         playerScoreItem.classList.add('life-lost-animation');
-        
-        // Animação do coração (apenas visual, sem alterar o HTML permanentemente)
-        const heartSpan = playerScoreItem.querySelector('.heart-temp');
-        if (heartSpan) {
-            heartSpan.remove();
-        }
-        
-        // Efeito sonoro de perda de vida (tom mais grave) - apenas se não for multiplayer remoto
-        try {
-            sfx(300, 'sawtooth', 0.3);
-        } catch(e) {
-            // Ignora erro de áudio
-        }
-        
-        // Pequena vibração no slot do jogador
+        try { sfx(300, 'sawtooth', 0.3); } catch(e) {}
         const playerSlot = document.getElementById(`p${playerId+1}`);
         if (playerSlot) {
             playerSlot.style.transform = 'scale(0.98)';
-            setTimeout(() => {
-                if (playerSlot) playerSlot.style.transform = '';
-            }, 200);
+            setTimeout(() => { if (playerSlot) playerSlot.style.transform = ''; }, 200);
         }
-        
-        // Remove a animação após terminar
-        setTimeout(() => {
-            if (playerScoreItem) {
-                playerScoreItem.classList.remove('life-lost-animation');
-            }
-        }, 600);
+        setTimeout(() => { if (playerScoreItem) playerScoreItem.classList.remove('life-lost-animation'); }, 600);
     }
+    
