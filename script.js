@@ -70,7 +70,7 @@
     const botTalk = {
         provoke: ["Tá jogando dormindo? 😂", "Essa vida aí já era hein!", "Ficou no cheiro!", "Minha avó jogava melhor que isso...", "Aceita que dói menos!", "FDP neles! 🔥", "Foi mal, sou profissional.", "Isso é FDP, não é paciência!", "Pode ir pedindo música já?", "Tô só aquecendo.", "Essa doeu até em mim.", "Caiu na minha armadilha!", "Famoso Gap", "Ih, sentiu a pressão? O dedo Chegou a tremer na carta."],
         unlucky: ["Não acredito que perdi essa vida...", "Baralho tá viciado!", "Que azar do caramba.", "Me roubaram na cara dura!", "Tava tudo planejado, menos isso.", "Vou denunciar esse bot!", "Na próxima eu não perdoo.", "Foi sorte sua, só isso.", "Alguém anotou a placa?", "Mão podre da desgraça!"],
-        bid: ["Essa mão tá melzinho na chupeta.", "Vou de leve nessa rodada.", "Aperta o cinto!", "Eita, agora o bicho vai pegar.", "Zero chance de eu errar essa.", "Boa sorte, vocês vão precisar.", "Vixi, o forbidden me quebrou.", "Tô sentindo o cheiro da vitória."],
+        bid: ["Essa mão tá melzinho na chupeta.", "Vou de leve nessa rodada.", "Aperta o cinto!", "Eita, agora o bicho vai pegar.", "Zero chance de eu errar essa.", "Boa sorte, vocês vão precisar.", `Vixi, o ${playerName} me quebrou.`, "Tô sentindo o cheiro da vitória."],
         win_trick: ["A casa sempre vence!", "Zapa neles!", "Aprende como se faz.", "Não adianta chorar.", "Já tá no bolso.", "Próxima!", "Chama o VAR!", "Ai meu Deus como é bom ser vida loka", "O pai é bom de mais!"]
     };
 
