@@ -2,229 +2,74 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FDP Online - Master AI & Trash Talk</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>FDP Online - Master AI & Trash Talk | Edição Lendária</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-<style>
-    .card-wrapper { 
-    position: absolute; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    transition: all 0.5s;
-    transform: translate(-50%, -50%); /* Garante que o centro da carta fique na coordenada */
-}
-    .active-turn {
-    box-shadow: 0 0 20px var(--gold) !important;
-    border: 2px solid var(--gold) !important;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { 
-        transform: translate(-50%, -50%) scale(1); 
-        box-shadow: 0 0 10px var(--gold);
-    }
-    50% { 
-        transform: translate(-50%, -50%) scale(1.03); /* Escala quase imperceptível */
-        box-shadow: 0 0 25px var(--gold); /* O foco é o brilho dourado */
-    }
-    100% { 
-        transform: translate(-50%, -50%) scale(1); 
-        box-shadow: 0 0 10px var(--gold);
-    }
-}
-    :root {
-        --bg-gradient: radial-gradient(circle, #1a472a 0%, #05140a 100%);
-        --gold: #ffd700;
-        --card-back: repeating-linear-gradient(45deg, #1a2a6c, #1a2a6c 10px, #b21f1f 10px, #b21f1f 20px);
-    }
-    body { font-family: 'Segoe UI', sans-serif; background: #050f09; color: white; margin: 0; display: flex; height: 100vh; overflow: auto; }
-    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
-    .toast { background: var(--gold); color: #000; padding: 10px 20px; border-radius: 5px; margin-bottom: 10px; font-weight: bold; opacity: 0.9; }
-    #multiplayer-overlay, #winner-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-    #winner-overlay { display: none; }
-    .conn-box { background: #111; padding: 30px; border: 2px solid var(--gold); border-radius: 15px; max-width: 400px; }
-    input { padding: 10px; border-radius: 5px; border: none; width: 80%; margin: 10px 0; text-align: center; }
-    #sidebar { width: 240px; background: rgba(0,0,0,0.9); border-right: 2px solid var(--gold); display: flex; flex-direction: column; z-index: 100; }
-    #scoreboard { padding: 15px; border-bottom: 1px solid #333; }
-    #game-log { height: 180px; background: #111; border-top: 2px solid var(--gold); padding: 10px; font-size: 11px; overflow-y: auto; color: #ddd; flex-shrink: 0; }
-    
-    #chat-wrapper { flex-grow: 1; display: flex; flex-direction: column; background: #000; border-top: 1px solid #333; overflow: hidden; }
-    #chat-box { flex-grow: 1; padding: 10px; font-size: 13px; overflow-y: auto; color: #aaa; }
-    .chat-msg { margin-bottom: 6px; line-height: 1.2; word-wrap: break-word; }
-    .chat-msg b { color: var(--gold); }
-    #chat-input-area { display: flex; padding: 8px; background: #111; gap: 5px; }
-    #chat-input { flex-grow: 1; padding: 6px; border-radius: 4px; border: 1px solid #444; background: #222; color: white; text-align: left; width: auto; margin: 0; }
-    #chat-send-btn { background: var(--gold); color: black; border: none; padding: 0 10px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; }
-
-    #main-game { flex-grow: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
-    #status-bar { width: 100%; background: rgba(0,0,0,0.8); padding: 15px; text-align: center; font-size: 18px; color: var(--gold); font-weight: bold; min-height: 25px; }
-    #game-board { position: relative; width: 90%; max-width: 900px; height: 65vh; margin: 20px; border: 12px solid #3d2b1f; border-radius: 180px; background: var(--bg-gradient); }
-    .player-slot { position: absolute; width: 180px; text-align: center; padding: 10px; border-radius: 15px; transition: all 0.3s ease; background: rgba(0,0,0,0.4); }
-    #p1 { bottom: 10px; left: 50%; transform: translateX(-50%); }
-    #p2 { right: 10px; top: 50%; transform: translateY(-50%); }
-    #p3 { top: 10px; left: 50%; transform: translateX(-50%); }
-    #p4 { left: 10px; top: 50%; transform: translateY(-50%); }
-    .info-box { font-size: 12px; margin-bottom: 5px; }
-    .bet-done { color: #00ff00; font-weight: bold; margin-left: 5px; }
-    .hand { 
-    display: flex; 
-    justify-content: center; 
-    align-items: flex-end; /* Alinha na base para o leque */
-    height: 120px; /* Aumentei um pouco para a rotação não cortar */
-    perspective: 1000px;
-    position: relative;
-    width: 200px; /* Largura fixa para o cálculo do leque */
-    margin: 0 auto;
-}
-
-    .card { width: 60px; height: 85px; background: white; border-radius: 6px; color: #222; position: relative; cursor: pointer; transition: transform 0.2s; flex-shrink: 0; border: 1px solid #999; }
-    .hand .card:not(:first-child) { margin-left: -35px; }
-    .hand .card:hover { transform: translateY(-15px); z-index: 100 !important; }
-    .card.red { color: #cc0000; }
-    .card.hidden-back { background: var(--card-back); border: 2px solid white; }
-    .card .rank { position: absolute; top: 2px; left: 5px; font-size: 16px; font-weight: bold; }
-    .card .center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; }
-    .card .suit-mini { position: absolute; bottom: 2px; right: 5px; font-size: 14px; }
-    #table-area { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; pointer-events: none; }
-    .card-wrapper { position: absolute; display: flex; flex-direction: column; align-items: center; transition: all 0.5s; }
-    .card-owner-name { font-size: 10px; color: var(--gold); margin-top: 5px; font-weight: bold; }
-    
-    /* IMPLEMENTAÇÃO 2: EFEITO DE SLIDE */
-    /* Isso impede que cartas que já foram renderizadas repitam a animação */
-.played-card { 
-    animation: slideToTable 0.5s ease-out forwards; 
-}
-    
-    @keyframes slideToTable {
-        0% { 
-            transform: scale(0.5) translateY(100px); 
-            opacity: 0; 
-        }
-        100% { 
-            transform: scale(1) translateY(0); 
-            opacity: 1; 
-        }
-    }
-
-    #controls { padding: 10px; z-index: 100; }
-    button { padding: 12px 25px; background: var(--gold); border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin: 5px; }
-    button:disabled { background: #555; cursor: not-allowed; }
-    .bet-btn { margin: 3px; font-size: 16px; }
-    .card {
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.4) !important;
-        border-radius: 8px !important;
-        border: 1px solid #aaa !important;
-        transition: transform 0.2s, box-shadow 0.2s !important;
-    }
-
-    .card:hover {
-        box-shadow: 0 8px 16px rgba(0,0,0,0.6) !important;
-    }
-
-    .card.hidden-back {
-        background: var(--card-back) !important;
-        background-image: radial-gradient(circle, #2c3e50 0%, #000 100%) !important;
-        border: 2px solid white !important;
-        box-shadow: inset 0 0 0 3px #1a2a6c !important;
-    }
-
-    .card .center {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-    }
-    /* Quando a largura da tela for menor que 768px (celular padrão) */
-@media screen and (max-width: 768px) {
-    /* Diminui um pouco o tamanho da mesa para caber na tela */
-    #game-board {
-        width: 95vw;
-        height: 50vh;
-        border-width: 8px;
-    }
-
-    /* Ajusta o tamanho das cartas para não estourarem a tela */
-    .card {
-        width: 45px;
-        height: 65px;
-    }
-
-    /* Ajusta o espaçamento das cartas na mão para não ficarem tão largas */
-    .hand .card:not(:first-child) {
-        margin-left: -25px;
-    }
-
-    /* Reduz o tamanho da fonte no status bar para não quebrar linha */
-    #status-bar {
-        font-size: 14px;
-        padding: 10px;
-    }
-}
-</style>
+    <link rel="stylesheet" href="style.css">
 </head>
-<audio id="bg-music" loop>
-    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-</audio>
 <body>
-
 <div id="toast-container"></div>
+
+<!-- Botão de ajuda movido para o topo -->
+<div id="help-button-top" onclick="toggleModal()">❔ Como Jogar</div>
+
 <div id="multiplayer-overlay">
     <div class="conn-box">
-        <h2 style="color:var(--gold)">FDP ONLINE</h2>
+        <h2>♠️ FDP ONLINE ♦️</h2>
         <div id="setup-view">
-            <p>Seu ID: <b id="my-id">...</b></p>
+            <p>Seu ID: <b id="my-id" style="color:var(--gold)">carregando...</b></p>
             <input type="text" id="peer-id-input" placeholder="Cole o ID do seu amigo">
             <br>
-            <button onclick="connectToPeer()">Conectar ao Amigo</button>
-            <hr style="border:0; border-top:1px solid #333; margin:20px 0">
-            <button onclick="startSolo()" style="background:#555">Jogar com Bots (Solo)</button>
-            <div style="margin-top: 10px;">
-                <label style="font-size: 12px;">Dificuldade IA:</label>
-                <select id="ai-difficulty" style="padding: 5px; border-radius: 5px;">
+            <button onclick="connectToPeer()">🎮 Conectar ao Amigo</button>
+            <hr style="margin:20px 0; border-color:#2a2f3a;">
+            <button onclick="startSolo()" style="background:#444; color:#f0b842;">🤖 Jogar com Bots (Solo)</button>
+            <div style="margin-top: 14px;">
+                <label style="font-size: 12px;">🤯 Dificuldade IA:</label>
+                <select id="ai-difficulty">
                     <option value="0">Iniciante</option>
                     <option value="1">Médio</option>
-                    <option value="2" selected>Experiente</option>
+                    <option value="2">Experiente</option>
+                    <option value="3" selected>⭐ Lenda (Wellxz? Mode)</option>
                 </select>
             </div>
-            <p id="conn-status" style="font-size:12px; color:#aaa"></p>
+            <p id="conn-status" style="font-size:12px; margin-top:12px; color:#aaa"></p>
         </div>
         <div id="lobby-view" style="display:none">
-            <h3>Jogadores na Sala:</h3>
-            <ul id="player-list" style="list-style:none; padding:0"></ul>
-            <button id="host-start-btn" onclick="startGame()" style="display:none">Começar Partida</button>
+            <h3>🔥 Jogadores na Sala</h3>
+            <ul id="player-list" style="list-style:none; margin: 15px 0;"></ul>
+            <button id="host-start-btn" onclick="startGame()" style="display:none">⚔️ COMEÇAR PARTIDA ⚔️</button>
         </div>
     </div>
 </div>
 
-<div id="winner-overlay">
-    <h1 style="color:var(--gold); font-size: 4rem;">🏆 VENCEDOR 🏆</h1>
-    <h2 id="winner-name" style="color: white;"></h2>
-    <button onclick="resetGame()">Jogar Novamente</button>
+<div id="winner-overlay" style="display: none !important;">
+    <div class="conn-box" style="background: #0b0e13;">
+        <h1 style="font-size:3rem; margin-bottom:10px;">🏆 VENCEDOR 🏆</h1>
+        <h2 id="winner-name" style="color:var(--gold); margin-bottom: 20px;"></h2>
+        <button onclick="resetGame()">🔄 Jogar Novamente</button>
+    </div>
 </div>
 
 <div id="sidebar">
-    <div id="audio-control" style="padding: 10px; text-align: center;">
-    <button id="toggle-music" onclick="toggleMusic()">🔊 Som Ligado</button>
-</div>
+    <div id="audio-control" style="padding: 15px; text-align: center;">
+        <button id="toggle-music" onclick="toggleMusic()" style="background:#1e2a24; color:var(--gold); border:1px solid var(--gold);">🔊 Ativar Trilha</button>
+    </div>
     <div id="scoreboard">
-        <h3 style="margin:0; color:var(--gold)">🏆 Placar</h3>
-        <div id="score-list" style="margin-top:10px"></div>
+        <h3>🏅 PLACAR DE VIDA</h3>
+        <div id="score-list"></div>
     </div>
     <div id="game-log"></div>
     <div id="chat-wrapper">
         <div id="chat-box"></div>
         <div id="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Digite aqui..." onkeydown="if(event.key==='Enter') sendChat()">
+            <input type="text" id="chat-input" placeholder="Manda a braba..." onkeydown="if(event.key==='Enter') sendChat()">
             <button id="chat-send-btn" onclick="sendChat()">➤</button>
         </div>
     </div>
 </div>
 
 <div id="main-game">
-    <div id="status-bar">Aguardando início...</div>
+    <div id="status-bar">⚡ Aguardando início...</div>
     <div id="game-board">
         <div id="p1" class="player-slot"><div class="info-box" id="i1"></div><div class="hand" id="h1"></div></div>
         <div id="p2" class="player-slot"><div class="info-box" id="i2"></div><div class="hand" id="h2"></div></div>
@@ -232,677 +77,23 @@
         <div id="p4" class="player-slot"><div class="info-box" id="i4"></div><div class="hand" id="h4"></div></div>
         <div id="table-area"></div>
     </div>
-    <div id="controls">
-        <div id="bet-zone"></div>
+    <div id="controls"><div id="bet-zone"></div></div>
+</div>
+
+<div id="instruction-modal" style="display: none; position: fixed; inset:0; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(6px);">
+    <div style="background: #12181c; border-radius: 36px; border-left: 8px solid var(--gold); max-width: 500px; padding: 28px; color: white;">
+        <h2 style="color:var(--gold)">📜 REGRAS DO JOGO</h2>
+        <p>🔮 <strong>Palpite</strong>: adivinhe quantas rodadas vai ganhar. A soma dos palpites NÃO pode igualar o total de cartas da rodada (regra do primordial).</p>
+        <p>🃏 <strong>Força das Cartas</strong>: 4♣ > 7♥ > A♠ > 7♦ > 3 > 2 > A > K > J > Q > 7 > 6 > 5 > 4.</p>
+        <p>💀 <strong>Vidas</strong>: erre o palpite, perde 1 vida. Eliminado sai do jogo.</p>
+        <p>♻️ <strong>Empate</strong>: cartas do mesmo valor se anulam. Se todos empatarem, o naipe define (♣ > ♥ > ♠ > ♦).</p>
+        <p>🎭 <strong>Primeira rodada</strong>: você vê as cartas dos oponentes, mas não a sua! Blefe estratégico.</p>
+        <a href="https://www.instagram.com/wellxzz/">Bom jogo!</a>
+        <button onclick="toggleModal()" style="margin-top: 20px; background: var(--gold);">Entendido!</button>
     </div>
 </div>
 
-<script>
-    window.onbeforeunload = function() {
-    return "Você tem certeza que quer sair? A partida será encerrada.";
-};
-
-    let botDifficulty = 2; 
-
-    // DICIONÁRIO DE PERSONALIDADE DOS BOTS
-    const botTalk = {
-        provoke: [
-            "Tá jogando dormindo? 😂", "Essa vida aí já era hein!", "Ficou no cheiro!", 
-            "Minha avó jogava melhor que isso...", "Aceita que dói menos!", "FDP neles! 🔥",
-            "Foi mal, sou profissional.", "Isso é FDP, não é paciência!", "Pode ir pedindo música já?",
-            "Tô só aquecendo.", "Essa doeu até em mim.", "Caiu na minha armadilha!", "Famoso Gap","Tá jogando dormindo ou o Wi-Fi aí é a lenha? 😂",
-        "Essa vida aí já era, pode ir pedindo o caixão!",
-        "Ficou no cheiro! Quase, hein? Só que não.",
-        "Minha avó jogava melhor que isso... e ela nem enxerga o naipe.",
-        "Aceita que dói menos, o pai tá inspirado!",
-        "FDP neles! Sem massagem. 🔥",
-        "Foi mal, é que eu jogo em outra categoria profissional.",
-        "Isso aqui é FDP, não é paciência da Microsoft!",
-        "Já pode pedir música no Fantástico ou tá cedo?",
-        "Tô só aquecendo, nem comecei a jogar sério ainda.",
-        "Essa doeu até em mim... mentira, doeu nada kkkk",
-        "Caiu no drible! Foi seco na armadilha.",
-        "Famoso Gap: onde passa um, passa boi e passa boiada!",
-        "Ih, sentiu a pressão? O dedo Chegou a tremer na carta."
-        ],
-        unlucky: [
-            "Não acredito que perdi essa vida...", "Baralho tá viciado!", "Que azar do caramba.",
-            "Me roubaram na cara dura!", "Tava tudo planejado, menos isso.", "Vou denunciar esse bot!",
-            "Na próxima eu não perdoo.", "Foi sorte sua, só isso.", "Alguém anotou a placa?","Vai se ferrar!"
-        ,"Não acredito... o jogo me odeia, só pode.",
-        "Baralho viciado da bixiga! Alguém embaralhou isso?",
-        "Que azar de dar dó. Tô zicado hoje.",
-        "Me roubaram na cara dura! O algoritmo tá contra mim.",
-        "Tava tudo planejado, só esqueceram de me avisar que ia dar errado.",
-        "Vou denunciar esse bot, tá configurado pra me quebrar!",
-        "Na próxima eu não perdoo, aproveita seu minuto de glória.",
-        "Foi sorte pura, zero habilidade envolvida. 🙄",
-        "Alguém anotou a placa do caminhão que passou por cima de mim?",
-        "Ah, vai se ferrar! Que carta é essa, mano?",
-        "O jogo me deu um limão e eu nem tenho açúcar.",
-        "Mão podre da desgraça, nem a vovó vencia com isso."
-        ],
-        bid: [
-            "Essa mão tá melzinho na chupeta.", "Vou de leve nessa rodada.", "Aperta o cinto!",
-            "Eita, agora o bicho vai pegar.", "Zero chance de eu errar essa.", "Boa sorte, vocês vão precisar.",
-            "Vixi, o forbidden me quebrou.", "Tô sentindo o cheiro da vitória.","Essa mão tá melzinho na chupeta. Já ganhei.",
-        "Vou de leve pra não assustar vocês logo de cara.",
-        "Aperta o cinto que o pai vai decolar!",
-        "Eita, agora o bicho vai pegar. Quem tem medo de lobo não entra no mato.",
-        "Zero chance de eu errar essa. Pode anotar aí.",
-        "Boa sorte, vocês vão precisar de um milagre.",
-        "Vixi, o forbidden me quebrou as pernas... mas eu me viro.",
-        "Tô sentindo o cheiro da vitória... e do desespero de vocês.",
-        "Vou pedir pouco pra não passar fome, sabe como é.",
-        "Tô com a faca e o queijo, só falta cortar."
-        ],
-        win_trick: [
-            "A casa sempre vence!", "Zapa neles!", "Aprende como se faz.", "Não adianta chorar.",
-            "Já tá no bolso.", "Próxima!", "Chama o VAR!", "Ai meu Deus como é bom ser vida loka", "O pai é bom de mais!","A casa sempre vence, respeita o dono da mesa!",
-        "Zapa neles! Essa aqui foi com requinte de crueldade.",
-        "Aprende como se faz, vou começar a cobrar pela aula.",
-        "Não adianta chorar, o choro é livre e a vaza é minha.",
-        "Já tá no bolso! Nem precisa contar o resto.",
-        "Próxima! Alguém traz um adversário à altura?",
-        "Chama o VAR! Ah não, foi limpo, eu que sou bom mesmo.",
-        "Ai meu Deus, como é bom ser vida loka e ganhar tudo!",
-        "O pai é bravo demais, não tem como.",
-        "Segura essa manga!",
-        "Passou nem sinal de rede por aqui agora."
-        ]
-    };
-
-    function botSpeak(botName, category) {
-        const phrases = botTalk[category];
-        const text = phrases[Math.floor(Math.random() * phrases.length)];
-        const emoji = chatEmojis[Math.floor(Math.random() * chatEmojis.length)];
-        addChatMsg(botName, text, emoji);
-        if(isHost) broadcast({ type: 'CHAT_MSG', user: botName, text: text, emoji: emoji });
-    }
-
-    function logEvent(msg, type = 'info') {
-    const log = document.getElementById('game-log');
-    const entry = document.createElement('div');
-    if (type === 'win') entry.style.color = '#ffd700';
-    entry.innerText = `> ${msg}`;
-    log.prepend(entry);
-}
-
-    const chatEmojis = ["😎", "🃏", "🔥", "🚀", "🤣", "🤔", "👀", "🥶", "💸", "🎮", "🤖", "🤡"];
-    
-    function addChatMsg(user, text, emoji = "") {
-        const box = document.getElementById('chat-box');
-        const div = document.createElement('div');
-        div.className = 'chat-msg';
-        const prefix = emoji ? `${emoji} ` : "";
-        div.innerHTML = `<b>${prefix}${user}:</b> ${text}`;
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
-    }
-
-    function sendChat() {
-        const input = document.getElementById('chat-input');
-        const text = input.value.trim();
-        if(!text) return;
-        const randomEmoji = chatEmojis[Math.floor(Math.random() * chatEmojis.length)];
-        const msg = { type: 'CHAT_MSG', user: playerName, text: text, emoji: randomEmoji };
-        if(isHost) { addChatMsg("Você", text, randomEmoji); broadcast(msg); } 
-        else if(conn) { addChatMsg("Você", text, randomEmoji); conn.send(msg); }
-        input.value = '';
-    }
-
-    function toggleMusic() {
-    const music = document.getElementById('bg-music');
-    const btn = document.getElementById('toggle-music');
-    if (music.paused) { music.play(); btn.innerText = "🔊 Som Ligado"; } 
-    else { music.pause(); btn.innerText = "🔇 Som Desligado"; }
-}
-    const music = document.getElementById('bg-music');
-
-document.addEventListener('click', () => {
-    if (music.paused) {
-        music.volume = 0.1;
-        music.play().then(() => { console.log("Música iniciada!"); }).catch(error => { console.log("Erro ao tocar música:", error); });
-    }
-}, { once: true });
-    const playerName = prompt("Como você quer ser chamado?", "Jogador");
-    // --- INTERCEPTOR EASTER EGG WELLINGTON ---
-if (playerName === "Wellxz?") {
-    // 1. SILENCIAR O JOGO
-    document.querySelectorAll('audio').forEach(el => { el.pause(); el.currentTime = 0; });
-
-    // 2. TRILHA SONORA (Naruto - Victory Theme / Estilo Conquista)
-    const eeAudio = new Audio("https://www.myinstants.com/media/sounds/naruto-main-theme.mp3");
-    eeAudio.loop = true;
-    eeAudio.volume = 0.4;
-
-    // 3. ESTILOS (Visual Dark Tech - Premium)
-    const eeStyle = document.createElement('style');
-    eeStyle.innerHTML = `
-        #ee-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #050505; z-index: 10000; display: flex;
-            justify-content: center; align-items: center; font-family: 'Courier New', monospace;
-        }
-        .ee-box {
-            border-left: 5px solid #00ff41; background: #0a0a0a;
-            padding: 50px; max-width: 700px; box-shadow: 0 0 40px rgba(0,255,65,0.1);
-            position: relative;
-        }
-        .ee-title { color: #00ff41; font-size: 2rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 3px; }
-        .ee-text { color: #fff; line-height: 1.6; font-size: 1.1rem; border-top: 1px solid #333; padding-top: 20px; }
-        .ee-btn { 
-            margin-top: 30px; background: #00ff41; border: none; color: #000; 
-            padding: 10px 30px; cursor: pointer; font-weight: bold; font-family: 'Courier New';
-            transition: 0.3s;
-        }
-        .ee-btn:hover { background: #fff; box-shadow: 0 0 20px #fff; }
-        .cursor { display: inline-block; width: 10px; height: 20px; background: #00ff41; margin-left: 5px; animation: blink 0.8s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
-    `;
-    document.head.appendChild(eeStyle);
-
-    // 4. ESTRUTURA
-    const eeOverlay = document.createElement('div');
-    eeOverlay.id = 'ee-overlay';
-    eeOverlay.innerHTML = `
-        <div class="ee-box">
-            <h1 class="ee-title">> ACCESS_GRANTED</h1>
-            <div class="ee-text" id="type-area"></div><span class="cursor"></span>
-            <br>
-            <button class="ee-btn" id="btn-exit" style="visibility: hidden;">[ RETORNAR_AO_SISTEMA ]</button>
-        </div>
-    `;
-    document.body.appendChild(eeOverlay);
-
-    // 5. LÓGICA DE ÁUDIO E TEXTO
-    const startEE = () => {
-        eeAudio.play().catch(() => {});
-    };
-    document.addEventListener('click', startEE, { once: true });
-    startEE();
-
-    const info = `Você acaba de encontrar um segredo guardado nas linhas deste código.
-Chegar até aqui exige curiosidade, algo que nem todos possuem.
-
-Sobre Mim: Wellington Desenvolvedor entusiasta, lenda no YU-GI-OH, o melhor jogador de super nintendo que já existiu e apaixonado por criar experiências únicas.
-
-Este sistema é meu campo de testes para a dominação mundial (ou só para umas jogatinas de FDP com o tema do Naruto).`
-    let index = 0;
-    
-    function type() {
-        if (index < info.length) {
-            document.getElementById("type-area").innerHTML += info.charAt(index).replace(/\n/g, '<br>');
-            index++;
-            setTimeout(type, 30);
-        } else {
-            document.getElementById("btn-exit").style.visibility = "visible";
-        }
-    }
-    setTimeout(type, 1000);
-
-    // 6. SAÍDA
-    document.getElementById('btn-exit').onclick = () => {
-        //eeAudio.pause();
-        eeOverlay.remove();
-        eeAudio.volume = 0.5;
-        // Opcional: Recomeçar a música do jogo aqui se quiser
-    };
-}
-
-    function showToast(msg) {
-        const container = document.getElementById('toast-container');
-        const div = document.createElement('div');
-        div.className = 'toast';
-        div.innerText = msg;
-        container.appendChild(div);
-        setTimeout(() => div.remove(), 3000);
-    }
-
-    function renderTable() {
-        const area = document.getElementById('table-area');
-        area.innerHTML = '';
-        
-        const positions = [
-            {top: '65%', left: '50%'}, // P1 (Você) - Mais para baixo
-            {top: '50%', left: '66%'}, // P2 (Bot 1) - Mais para a direita
-            {top: '30%', left: '50%'}, // P3 (Bot 2) - Mais para cima
-            {top: '50%', left: '35%'}  // P4 (Bot 3) - Mais para a esquerda
-];
-
-        tableCards.forEach((item, index) => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'card-wrapper';
-            
-            const pos = positions[item.owner];
-            wrapper.style.top = pos.top;
-            wrapper.style.left = pos.left;
-            
-            const el = document.createElement('div');
-            const isRed = (item.card.s === '♥' || item.card.s === '♦');
-            el.className = `card played-card ${isRed ? 'red' : ''}`;
-            el.innerHTML = `<div class="rank">${item.card.v}</div><div class="center">${item.card.s}</div><div class="suit-mini">${item.card.s}</div>`;
-            
-            const nameLabel = document.createElement('div');
-            nameLabel.className = 'card-owner-name';
-            nameLabel.innerText = players[item.owner].name;
-            
-            wrapper.appendChild(el);
-            wrapper.appendChild(nameLabel);
-            area.appendChild(wrapper);
-        });
-    }
-
-    let peer, conn;
-    let isHost = false;
-    let myPlayerIndex = 0;
-    let connections = []; 
-
-    const au = new (window.AudioContext || window.webkitAudioContext)();
-    function sfx(f, t, d) {
-        const o = au.createOscillator(); const g = au.createGain();
-        o.type = t; o.frequency.value = f; g.gain.exponentialRampToValueAtTime(0.0001, au.currentTime + d);
-        o.connect(g); g.connect(au.destination); o.start(); o.stop(au.currentTime + d);
-    }
-
-    const suits = ['♣', '♥', '♠', '♦'];
-    const values = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
-    const power = {'4♣':100,'7♥':99,'A♠':98,'7♦':97,'3':10,'2':9,'A':8,'K':7,'J':6,'Q':5,'7':4,'6':3,'5':2,'4':1};
-
-    let players = [
-        { id: 0, name: playerName || "Você", lives: 3, hand: [], bid: 0, won: 0, bot: false, hasBetted: false, remote: false },
-        { id: 1, name: "Bot 1", lives: 3, hand: [], bid: 0, won: 0, bot: true, hasBetted: false, remote: false },
-        { id: 2, name: "Bot 2", lives: 3, hand: [], bid: 0, won: 0, bot: true, hasBetted: false, remote: false },
-        { id: 3, name: "Bot 3", lives: 3, hand: [], bid: 0, won: 0, bot: true, hasBetted: false, remote: false }
-    ];
-
-    let currentCards = 1;
-    let turnStarter = 0;
-    let roundStarter = 0;
-    let tableCards = [];
-
-    function initPeer() {
-        peer = new Peer();
-        peer.on('open', id => { document.getElementById('my-id').innerText = id; });
-        peer.on('connection', c => { isHost = true; setupConn(c); document.getElementById('setup-view').style.display = 'none'; document.getElementById('lobby-view').style.display = 'block'; document.getElementById('host-start-btn').style.display = 'inline-block'; });
-    }
-
-    function connectToPeer() {
-        const remoteId = document.getElementById('peer-id-input').value;
-        if(!remoteId) return alert("Insira um ID!");
-        conn = peer.connect(remoteId);
-        setupConn(conn);
-        document.getElementById('conn-status').innerText = "Conectando...";
-    }
-
-    function setupConn(c) {
-        c.on('open', () => {
-            if(!isHost) {
-                conn = c;
-                document.getElementById('setup-view').style.display = 'none';
-                document.getElementById('lobby-view').style.display = 'block';
-                document.getElementById('conn-status').innerText = "Conectado ao Host!";
-            } else {
-                connections.push(c);
-                let nextSlot = players.find(p => p.bot);
-                if(nextSlot) { nextSlot.bot = false; nextSlot.remote = true; nextSlot.name = "Amigo " + nextSlot.id; nextSlot.connId = c.peer; }
-                updateLobbyList();
-                broadcast({ type: 'LOBBY_UPDATE', players: players });
-            }
-        });
-        c.on('data', data => handleNetworkData(data));
-    }
-
-    function updateLobbyList() {
-        const list = document.getElementById('player-list');
-        list.innerHTML = players.map(p => `<li>${p.name} ${p.bot ? '(Bot)' : p.id === 0 && isHost ? '(Host)' : '(Player)'}</li>`).join('');
-    }
-
-    function startSolo() {
-        isHost = true;
-        botDifficulty = parseInt(document.getElementById('ai-difficulty').value);
-        document.getElementById('multiplayer-overlay').style.display = 'none';
-        startGame();
-    }
-
-    initPeer();
-
-    function broadcast(data) { connections.forEach(c => c.send(data)); }
-    function sendTo(playerIdx, data) {
-        const p = players[playerIdx];
-        const target = connections.find(c => c.peer === p.connId);
-        if(target) target.send(data);
-    }
-
-    function handleNetworkData(data) {
-        if(data.type === 'CHAT_MSG') { addChatMsg(data.user, data.text, data.emoji); if(isHost) broadcast(data); }
-        if(data.type === 'LOBBY_UPDATE') { players = data.players; myPlayerIndex = players.findIndex(p => p.connId === peer.id); updateLobbyList(); }
-        if(data.type === 'START_GAME') { document.getElementById('multiplayer-overlay').style.display = 'none'; document.getElementById('winner-overlay').style.display = 'none'; }
-        if(data.type === 'SYNC_STATE') { players = data.players; tableCards = data.tableCards; currentCards = data.currentCards; updateStatus(data.status); render(); renderTable(); if(data.activeId !== undefined) highlightPlayer(data.activeId); if(data.winner) showWinner(data.winner); }
-        if(data.type === 'ASK_BID') { askBid(data.forbidden).then(val => { conn.send({ type: 'RES_BID', value: val, from: myPlayerIndex }); }); }
-        if(data.type === 'ASK_CARD') { waitCard().then(card => { conn.send({ type: 'RES_CARD', value: card, from: myPlayerIndex }); }); }
-        if(isHost) {
-            if(data.type === 'RES_BID' && window.resolverBid) { window.resolverBid(data.value); window.resolverBid = null; }
-            if(data.type === 'RES_CARD' && window.resolverCard) { 
-                const p = players[data.from];
-                const cardIdx = p.hand.findIndex(c => c.id === data.value.id);
-                if(cardIdx !== -1) p.hand.splice(cardIdx, 1);
-                window.resolverCard(data.value); 
-                window.resolverCard = null; 
-            }
-        }
-    }
-
-    function showWinner(name) {
-        document.getElementById('winner-name').innerText = name;
-        document.getElementById('winner-overlay').style.display = 'flex';
-    }
-
-    function updateStatus(m) { document.getElementById('status-bar').innerText = m; }
-
-    function highlightPlayer(id) {
-        document.querySelectorAll('.player-slot').forEach(s => s.classList.remove('active-turn'));
-        if(id !== null) { 
-            const el = document.getElementById(`p${id+1}`);
-            if(el) el.classList.add('active-turn'); 
-        }
-    }
-
-    async function startGame() {
-        if(isHost) broadcast({ type: 'START_GAME' });
-        document.getElementById('multiplayer-overlay').style.display = 'none';
-        document.getElementById('winner-overlay').style.display = 'none';
-        if(!isHost && conn) return;
-        roundStarter = Math.floor(Math.random() * 4);
-        gameLoop();
-    }
-
-    function resetGame() {
-        if(!isHost) return;
-        players.forEach(p => { p.lives = 3; p.hand = []; p.bid = 0; p.won = 0; p.hasBetted = false; });
-        currentCards = 1;
-        document.getElementById('winner-overlay').style.display = 'none';
-        broadcast({ type: 'START_GAME' });
-        startGame();
-    }
-
-    async function gameLoop() {
-        if (currentCards > 10) return updateStatus("FIM DO JOGO!");
-        players.forEach(p => { p.hand = []; p.bid = 0; p.won = 0; p.hasBetted = false; });
-        tableCards = [];
-        let deck = [];
-        for(let s of suits) for(let v of values) deck.push({s, v, id: v+s});
-        
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-
-        shuffle(deck);
-        for(let i=0; i<currentCards; i++) { players.forEach(p => { if(p.lives > 0) p.hand.push(deck.pop()); }); }
-        
-        sync(); 
-        turnStarter = roundStarter;
-        await handleBids();
-        await handleTricks();
-        
-        let alive = players.filter(p => p.lives > 0);
-        if (alive.length <= 1) {
-            let winName = alive.length === 1 ? alive[0].name : "Empate!";
-            sync("FIM!", null, winName);
-            showWinner(winName);
-            return;
-        }
-        roundStarter = (roundStarter + 1) % 4;
-        currentCards++;
-        gameLoop();
-    }
-
-    function sync(msg = "", active = null, winner = null) {
-        if(!isHost) return;
-        render();
-        renderTable();
-        broadcast({ type: 'SYNC_STATE', players: players, tableCards: tableCards, currentCards: currentCards, status: msg, activeId: active, winner: winner });
-    }
-
-    async function handleBids() {
-        let bidder = roundStarter;
-        let sum = 0;
-        let activePlayers = players.filter(p => p.lives > 0);
-        let processed = 0;
-
-        while(processed < activePlayers.length) {
-            let p = players[bidder];
-            if(p.lives > 0) {
-                let forbidden = (processed === activePlayers.length - 1 && currentCards > 1) ? (currentCards - sum) : -1;
-                highlightPlayer(bidder);
-                
-                if (p.bot) {
-                    updateStatus(`${p.name} pensando...`);
-                    await new Promise(r => setTimeout(r, 600));
-                    
-                    let strength = 0;
-                    p.hand.forEach(c => {
-                        let pwr = power[c.id] || power[c.v];
-                        if (pwr >= 98) strength += 1; 
-                        else if (pwr >= 9) strength += 0.7; 
-                        else if (pwr >= 7) strength += 0.3; 
-                    });
-
-                    // IMPLEMENTAÇÃO 4: IA MESTRE
-                    if (botDifficulty === 0) {
-                        p.bid = Math.round(strength);
-                    } else {
-                        p.bid = Math.ceil(strength * 0.85);
-
-                        if (botDifficulty === 2) {
-                            const isFirstToBid = (processed === 0);
-                            // Blefe: Se tem cartas ruins, às vezes pede 1 para assustar
-                            if (strength < 0.3 && Math.random() > 0.8) {
-                                p.bid = 1; 
-                                botSpeak(p.name, 'bid');
-                            }
-                            // Pressão: Se for o primeiro, tenta inflar o palpite total
-                            if (isFirstToBid && strength > 1) {
-                                p.bid += (Math.random() > 0.7 ? 1 : 0);
-                            }
-                        }
-                    }
-
-                    if (p.bid > currentCards) p.bid = currentCards;
-
-                    if (p.bid === forbidden) {
-                        if (botDifficulty === 2) {
-                            p.bid = (strength > 0.5 || p.bid === 0) ? p.bid + 1 : p.bid - 1;
-                        } else {
-                            p.bid = (p.bid === 0) ? 1 : p.bid - 1;
-                        }
-                    }
-
-                    if (p.bid < 0) p.bid = 0;
-                    if(Math.random() > 0.7) botSpeak(p.name, 'bid');
-
-                } else if (p.remote) {
-                    updateStatus(`Aguardando palpite de ${p.name}...`);
-                    sendTo(bidder, { type: 'ASK_BID', forbidden });
-                    p.bid = await new Promise(res => { window.resolverBid = res; });
-                } else {
-                    updateStatus("Sua vez! Qual seu palpite?");
-                    p.bid = await askBid(forbidden);
-                }
-                sum += p.bid;
-                p.hasBetted = true;
-                sfx(400, 'sine', 0.1);
-                logEvent(`${p.name} deu o palpite: ${p.bid}`);
-                sync();
-                processed++;
-            }
-            bidder = (bidder + 1) % 4;
-        }
-    }
-
-    function askBid(forbidden) {
-        return new Promise(res => {
-            const zone = document.getElementById('bet-zone');
-            zone.innerHTML = '';
-            for(let i=0; i<=currentCards; i++) {
-                let b = document.createElement('button');
-                b.className = 'bet-btn';
-                b.innerText = i;
-                if(i === forbidden) b.disabled = true;
-                b.onclick = () => { zone.innerHTML=''; res(i); };
-                zone.appendChild(b);
-            }
-        });
-    }
-
-    async function handleTricks() {
-        for(let t=0; t<currentCards; t++) {
-            tableCards = [];
-            let pIdx = turnStarter;
-            let playedCount = 0;
-            let activeCount = players.filter(p => p.lives > 0).length;
-
-            while(playedCount < activeCount) {
-                let p = players[pIdx];
-                if(p.lives > 0) {
-                    highlightPlayer(pIdx);
-                    let card;
-                    if(p.bot) {
-                        updateStatus(`${p.name} jogando...`);
-                        await new Promise(r => setTimeout(r, 800));
-                        p.hand.sort((a,b) => (power[a.id]||power[a.v]) - (power[b.id]||power[b.v]));
-                        let currentBest = tableCards.length === 0 ? 0 : Math.max(...tableCards.map(tc => power[tc.card.id] || power[tc.card.v]));
-                        
-                        if (botDifficulty >= 1) {
-                            if (p.won < p.bid) {
-                                let winCards = p.hand.filter(c => (power[c.id] || power[c.v]) > currentBest);
-                                if (winCards.length > 0) card = (playedCount === activeCount - 1) ? winCards[0] : winCards[winCards.length - 1];
-                                else card = p.hand[0];
-                            } else {
-                                let loseCards = p.hand.filter(c => (power[c.id] || power[c.v]) < currentBest);
-                                if (tableCards.length > 0 && loseCards.length > 0) card = loseCards[loseCards.length - 1]; 
-                                else card = p.hand[0];
-                            }
-                        } else {
-                            card = p.won < p.bid ? p.hand.pop() : p.hand.shift();
-                        }
-                        p.hand = p.hand.filter(c => c.id !== card.id);
-                    } else if (p.remote) {
-                        updateStatus(`Aguardando carta de ${p.name}...`);
-                        sendTo(pIdx, { type: 'ASK_CARD' });
-                        card = await new Promise(res => { window.resolverCard = res; });
-                    } else {
-                        updateStatus("Sua vez! Escolha uma carta.");
-                        card = await waitCard();
-                    }
-                    tableCards.push({card, owner: pIdx});
-                    sfx(600, 'sine', 0.1);
-                    logEvent(`${p.name} jogou ${card.v}${card.s}`);
-                    sync(null, pIdx);
-                    playedCount++;
-                }
-                pIdx = (pIdx + 1) % 4;
-            }
-            let winIdx = calcWinner(tableCards);
-            players[winIdx].won++;
-            turnStarter = winIdx;
-
-            if(players[winIdx].bot && Math.random() > 0.5) botSpeak(players[winIdx].name, 'win_trick');
-
-            logEvent(`🏆 ${players[winIdx].name} venceu a mesa!`, 'win');
-            showToast(`${players[winIdx].name} venceu a mesa!`);
-            sfx(800, 'triangle', 0.2);
-            await new Promise(r => setTimeout(r, 1500));
-            tableCards = []; 
-            sync();
-        }
-        await endRound();
-    }
-
-    function waitCard() {
-        return new Promise(res => {
-            const cards = document.querySelectorAll(`#h${myPlayerIndex+1} .card`);
-            cards.forEach((c, i) => {
-                c.onclick = () => {
-                    cards.forEach(el => el.onclick = null);
-                    let card = players[myPlayerIndex].hand.splice(i,1)[0];
-                    res(card);
-                };
-            });
-        });
-    }
-
-    function calcWinner(list) {
-        let sc = list.map(x => ({...x, pwr: power[x.card.id] || power[x.card.v]}));
-        let counts = {}; sc.forEach(s => counts[s.pwr] = (counts[s.pwr] || 0) + 1);
-        let valid = sc.filter(s => counts[s.pwr] === 1);
-        if (valid.length === 0) {
-            let max = Math.max(...sc.map(s => s.pwr));
-            let ties = sc.filter(s => s.pwr === max);
-            const suitsP = {'♣':4,'♥':3,'♠':2,'♦':1};
-            return ties.sort((a,b) => suitsP[b.card.s] - suitsP[a.card.s])[0].owner;
-        }
-        return valid.sort((a,b) => b.pwr - a.pwr)[0].owner;
-    }
-
-    async function endRound() {
-        players.forEach(p => { 
-            if(p.lives > 0 && p.bid !== p.won) {
-                p.lives--; 
-                if(p.id === myPlayerIndex) {
-                    let randomBot = players.filter(b => b.bot && b.lives > 0)[0];
-                    if(randomBot) botSpeak(randomBot.name, 'provoke');
-                } else if (p.bot) {
-                    botSpeak(p.name, 'unlucky');
-                }
-            }
-        });
-        logEvent("--- Fim da rodada! ---");
-        sync();
-        await new Promise(r => setTimeout(r, 2000));
-    }
-
-    function render() {
-        players.forEach((p, i) => {
-            const info = document.getElementById(`i${i+1}`);
-            const h = document.getElementById(`h${i+1}`);
-            if (p.lives <= 0) { info.innerHTML = `<b>${p.name}</b><br><span style="color:gray">ELIMINADO</span>`; h.innerHTML = ''; return; }
-            info.innerHTML = `<b>${p.name}</b> ${p.hasBetted ? '<span class="bet-done">✅</span>' : ''}<br>
-                              <span style="color:#ff5555">❤️ ${p.lives}</span> | Palpite: ${p.bid} | Fez: ${p.won}`;
-            h.innerHTML = '';
-            p.hand.forEach((c, idx) => {
-                const el = document.createElement('div');
-                const isRed = (c.s === '♥' || c.s === '♦');
-                let hide = (currentCards === 1) ? (i === myPlayerIndex) : (i !== myPlayerIndex);
-                el.className = `card ${isRed ? 'red' : ''} ${hide ? 'hidden-back' : ''}`;
-                if(!hide) el.innerHTML = `<div class="rank">${c.v}</div><div class="center">${c.s}</div><div class="suit-mini">${c.s}</div>`;
-                h.appendChild(el);
-            });
-        });
-    }
-    function toggleModal() {
-    const modal = document.getElementById('instruction-modal');
-    modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
-}
-</script>
-<button onclick="toggleModal()" style="position: absolute; top: 10px; right: 10px; z-index: 5000; background: var(--gold); border: none; padding: 10px; cursor: pointer; border-radius: 5px; font-weight: bold;">Como Jogar</button>
-
-<div id="instruction-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: #111; padding: 20px; border: 2px solid var(--gold); border-radius: 15px; max-width: 500px; color: white; text-align: center; overflow-y: auto; max-height: 80vh;">
-        <h2>Como Jogar FDP Online</h2>
-        <p>1. <b>Palpites:</b> Você deve adivinhar quantas rodadas vai ganhar. 
-
-</p>
-        <p>2. <b>A Regra do Ouro:</b> A soma dos palpites de todos não pode ser igual ao número de cartas da rodada na última jogada.</p>
-        <p>3. <b>Força das Cartas:</b> O baralho segue a ordem: 4♣ (mais forte) > 7♥ > A♠ > 7♦ > 3 > 2 > A > K > J > Q > 7 > 6 > 5 > 4.</p>
-        <p>4. <b>Vidas:</b> Se você errar seu palpite, perde uma vida! </p>
-        <p>5. <b>Se duas cartas tiverem mesmo valor, elas serão anuladas a menos que todas "empatem", ai o maior naipe ganha nessa ordem(♣> ♥ > ♠ > ♦ )</b></p>
-        <p><b>Na primeira rodada você não pode ver sua carta, então seu palpite será baseado nas cartas dos oponentes.</b></p>
-        <button onclick="toggleModal()" style="background: var(--gold); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Entendido!</button>
-    </div>
-</div>
+<script src="script.js"></script>
+<audio id="bg-music" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"></audio>
 </body>
 </html>
